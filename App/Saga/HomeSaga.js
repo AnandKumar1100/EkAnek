@@ -7,7 +7,7 @@ export function* fetchImagesList(api, action){
     let { response, error } = yield call(api.GET, `rest?method=flickr.photos.search&api_key=${API_KEY}&format=json&text=${searchText}&nojsoncallback=true&per_page=${PAGE_SIZE}&extras=url_s&page=${pageNumber}`)
 
     if (response.ok) {
-        yield put(homeActions.saveImagesList(response.data.photos.photo))
+        yield put(homeActions.saveImagesList({[searchText] : response.data.photos.photo}))
     }
     else{
         console.log(error)

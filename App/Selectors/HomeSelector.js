@@ -2,9 +2,9 @@ import { createSelector } from 'reselect';
 
 const selectHome = (state) => state.home;
 
-const getImagesList = () => createSelector(
+const getImagesListWithSearchText = () => createSelector(
     selectHome,
-    (home) => home.imagesList
+    (home) => home.imagesListWithSearchText
 )
 
 const getPageNo = () => createSelector(
@@ -13,6 +13,6 @@ const getPageNo = () => createSelector(
 )
 
 export {
-    getImagesList,
+    getImagesListWithSearchText,
     getPageNo
 };

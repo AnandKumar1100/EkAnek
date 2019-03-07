@@ -1,31 +1,55 @@
 import React, { PropTypes } from "react";
+import { NetInfo } from 'react-native'
 import Home from './HomeRender';
 import { connect } from "react-redux";
 import { bindActionCreators } from 'redux';
 import { ActionSheet } from 'native-base'
-import loginActions from '../../Redux/HomeRedux'
+import homeActions from '../../Redux/HomeRedux'
 import * as selectors from '../../Selectors/HomeSelector';
 import { EMPTY_STRING, CANCEL_INDEX, INITIAL_GRID_COLUMNS } from '../../Constants'
+import { saveImagesListInAsyncStorage, fetchImagesListInAsyncStorage } from '../../Components/AsyncStorage/index'
+import isEqual from 'lodash/isEqual'
 
 class HomeContainer extends React.Component {
 
   constructor(props, context) {
     super(props, context);
     this.state = {
-      gridColumns : 2
+      gridColumns : 2,
+      searchText : null
     }
-    this.searchText = null
+    this.isConnected = true
+  }
+
+  componentDidMount() {
+    NetInfo.addEventListener('connectionChange', this.handleConnectivityChange);
+  }
+
+  componentDidUpdate(prevProps){
+    if(!isEqual(prevProps.imagesListWithSearchText, this.props.imagesListWithSearchText) && this.isConnected){
+      saveImagesListInAsyncStorage(this.props.imagesListWithSearchText)
+    }
+  }
+
+  componentWillUnmount() {
+    NetInfo.removeEventListener('connectionChange', this.handleConnectivityChange);
+ }
+
+  handleConnectivityChange = connection => {
+    if(connection.type == 'none' ||connection.type == 'unknown')
+      this.isConnected = false
+    else
+      this.isConnected = true
   }
 
   handleSearch = (event) =>{
-    if(event.nativeEvent.text == EMPTY_STRING)
-      this.props.actions.resetImagesList() 
-    else if (this.searchText !== event.nativeEvent.text)
-      {
-        this.props.actions.resetImagesList()
-        this.searchText = event.nativeEvent.text
-        this.fetchImagesList(this.searchText, 1)
+    const { searchText } = this.state
+    if (event.nativeEvent.text !== EMPTY_STRING && searchText !== event.nativeEvent.text){
+        if(this.isConnected)
+          this.fetchImagesList(event.nativeEvent.text, 1)
+        else fetchImagesListInAsyncStorage()
       }
+    this.setState({ searchText : event.nativeEvent.text })
   }
 
   fetchImagesList = (searchText, pageNumber)=> {
@@ -36,7 +60,9 @@ class HomeContainer extends React.Component {
 
   scrollHandler = () =>{
     const { pageNo } = this.props
-    this.fetchImagesList(this.searchText, pageNo)
+    if(this.isConnected)
+      this.fetchImagesList(this.state.searchText, pageNo)
+    else alert('Sorry No Internet Connection Available')
   }
 
   showMenuOptions = () =>{
@@ -48,19 +74,19 @@ class HomeContainer extends React.Component {
         title: "Grid Columns"
       },
       buttonIndex => {
-        this.setState({ gridColumns: BUTTONS[buttonIndex] === 3 ? INITIAL_GRID_COLUMNS : BUTTONS[buttonIndex] });
+        this.setState({ gridColumns: BUTTONS[buttonIndex] === "Cancel" ? INITIAL_GRID_COLUMNS : BUTTONS[buttonIndex] });
       }
     )
   }
 
   render() {
-    const { imagesList } = this.props
-    const { gridColumns } = this.state
+    const { imagesListWithSearchText } = this.props
+    const { gridColumns, searchText } = this.state
     return (
       <Home 
       gridColumns={gridColumns}
       handleSearch={this.handleSearch}
-      imagesList={imagesList}
+      imagesList={searchText ? imagesListWithSearchText[searchText] : []}
       showMenuOptions={this.showMenuOptions}
       scrollHandler={this.scrollHandler}/>
     );
@@ -68,11 +94,11 @@ class HomeContainer extends React.Component {
 }
 
 const makeMapStateToProps = () => {
-  const getImagesList = selectors.getImagesList()
+  const getImagesListWithSearchText = selectors.getImagesListWithSearchText()
   const getPageNo = selectors.getPageNo()
   const mapStateToProps = (state) => {
     return {
-      imagesList : getImagesList(state),
+      imagesListWithSearchText : getImagesListWithSearchText(state),
       pageNo : getPageNo(state)
     }
   }
@@ -80,7 +106,7 @@ const makeMapStateToProps = () => {
 }
 
 function mapDispatchToProps(dispatch) {
-  const actionsToBind = Object.assign({}, loginActions);
+  const actionsToBind = Object.assign({}, homeActions);
   return {
     actions: bindActionCreators(actionsToBind, dispatch)
   }

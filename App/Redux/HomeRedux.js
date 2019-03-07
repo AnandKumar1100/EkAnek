@@ -3,7 +3,7 @@ import Immutable from 'seamless-immutable'
 
 const { Types, Creators } = createActions({
   fetchImagesList: ['payload'],
-  saveImagesList : ['imagesList'],
+  saveImagesList : ['imagesListWithSearchText'],
   savePageNo : ['pageNo'],
   resetImagesList : null
 })
@@ -13,12 +13,20 @@ export default Creators
 
 
 export const INITIAL_STATE = Immutable({
-    imagesList: [],
+    imagesListWithSearchText: {},
     pageNo : 1
 })
   
-export const saveImagesList = (state, { imagesList }) => {
-  return state.merge({ imagesList : [...state.imagesList, ...imagesList] })
+export const saveImagesList = (state, { imagesListWithSearchText }) => {
+  // Todo : Test all condition when app is offline
+  let updatedImagesListWithSearchText = {...imagesListWithSearchText}
+  if(state.pageNo >2){
+    const searchText = Object.keys(imagesListWithSearchText)[0]
+    updatedImagesListWithSearchText = { 
+      [searchText] : [...state.imagesListWithSearchText[searchText], ...updatedImagesListWithSearchText[searchText]]
+    }
+  }
+  return state.merge({ imagesListWithSearchText : {...state.imagesListWithSearchText, ...updatedImagesListWithSearchText} })
 }
 
 export const savePageNo = (state, { pageNo }) => state.merge({ pageNo })

@@ -1,10 +1,13 @@
 import { put, call } from 'redux-saga/effects'
 import homeActions from '../Redux/HomeRedux'
+import { API_KEY, PAGE_SIZE } from '../Constants'
 
 export function* fetchImagesList(api, action){
-    let { response, error } = yield call(api.GET, 'rest?method=flickr.photos.search&api_key=8a8848844612bb1ec0b385edd505fab8&format=json&text=a&nojsoncallback=true&per_page=20&extras=url_s&page=2')
+    const { searchText, pageNumber } = action.payload
+    let { response, error } = yield call(api.GET, `rest?method=flickr.photos.search&api_key=${API_KEY}&format=json&text=${searchText}&nojsoncallback=true&per_page=${PAGE_SIZE}&extras=url_s&page=${pageNumber}`)
+
     if (response.ok) {
-        yield put(homeActions.saveImagesList(response))
+        yield put(homeActions.saveImagesList(response.data.photos.photo))
     }
     else{
         console.log(error)

@@ -7,6 +7,12 @@ const getImagesList = () => createSelector(
     (home) => home.imagesList
 )
 
+const getPageNo = () => createSelector(
+    selectHome,
+    (home) => home.pageNo
+)
+
 export {
-    getImagesList
+    getImagesList,
+    getPageNo
 };
